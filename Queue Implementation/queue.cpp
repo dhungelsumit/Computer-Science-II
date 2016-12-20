@@ -1,104 +1,115 @@
+include <iostream>
 #include <string>
 #include <fstream>
 #include <iomanip>
 #include <stdlib.h>
-#include <vector>
 #include <algorithm>
 #include <string>
 #include <stdexcept>//set of standard exceptions that both the library and programs can use to report common errors.
 
-template <typename T, typename StackVector = std::vector<T> >//definition of template
+template <typename T>//definition of template
 
-class stackType
-{
-public:
-    stackType(int);
-    void MakeEmpty();
-    bool IsEmpty() const;
-    bool IsFull() const;
-    int Size() const;
-    void Push (T const&);
-    void Pop();
-    T Top() const;
-private:
-    int top;
-    int size;
-    StackVector elements;
+struct Node {
+    T info;
+    Node<T>* next;
 };
 
-class stackTypeException: public std::logic_error
+template <typename T>
+class queueType
 {
 public:
-    stackTypeException(const std::string& message = "stackType Error")
-    :logic_error(message.c_str())
+    queueType(int );
+    bool IsFull() const;
+    bool IsEmpty() const;
+    void Enqueue(T const&);
+    int Size() const;
+    void MakeEmpty();
+    T Dequeue();
+private:
+    int size;
+    int current;
+    Node<T>* root;
+    Node<T>* rear;
+};
+
+
+class queueTypeException: public std::logic_error {
+public:
+    queueTypeException(const std::string& message = "queueType Error")
+        :logic_error(message.c_str())
         {}
 };
 
-
-template <typename T, typename StackVector>
-stackType<T, StackVector>::stackType(int si){
-  elements.resize(size);
-  size = si;
-  top = -1;
+template <typename T>
+queueType<T>::queueType(int si){
+    size = si;
+    current = 0;
+    Node<T>* root;
+    root = NULL;
 }
 
-
-template <typename T, typename StackVector>
-bool stackType<T, StackVector>::IsEmpty() const {
-  return (top == -1);
+template <typename T>
+bool queueType<T>::IsFull() const {
+    return (size == current);
 }
 
-
-template <typename T, typename StackVector>
-bool stackType<T, StackVector>::IsFull() const {
-  return (top == size -1);
+template <typename T>
+bool queueType<T>::IsEmpty() const {
+    return (current == 0);
 }
 
-template <typename T, typename StackVector>
-void stackType<T, StackVector>::MakeEmpty() {
-  if (!IsEmpty()){
-    size = 0;
-    elements.resize(size);
-    top = -1;
-  }
+template <typename T>
+void queueType<T>::MakeEmpty(){
+    current = 0;
 }
 
-template <typename T, typename StackVector>
-void stackType<T, StackVector>::Push(T const& newItem){
-  if (IsFull()){
-        throw stackTypeException("The Stack is Full");}
-  else {
-    top += 1;
-    if (elements.size() == 0){
-      elements.resize(size);    }
-    elements[top] = newItem;
-  }
+template <typename T>
+int queueType<T>::Size() const {
+    return current;
 }
 
-template <typename T, typename StackVector>
-void stackType<T, StackVector>::Pop() {
-  if (IsEmpty()){
-    throw stackTypeException("The Stack is Empty");
-  } else {
-  top-=1;
-  }
-}
-
-template <typename T, typename StackVector>
-T stackType<T, StackVector>::Top() const
-{
-    if (IsEmpty()){
-        throw stackTypeException("The Stack is Empty");
+template <typename T>
+void queueType<T>::Enqueue(T const& newItem){
+     if (IsFull())
+        {
+        throw queueTypeException("Limit Exceeded");
     }
     else{
-        return elements[top];
+        Node<T>* newNode = new Node<T>;
+        newNode->info = newItem;
+        newNode->next = NULL;
+        if (root == NULL)
+        {
+            root=newNode;
+        }
+        else{
+            rear->next = newNode;
+        }
+        rear=newNode;
+        current++;
+
+        }
+};
+
+template <typename T>
+T queueType<T>::Dequeue()
+{
+    if (IsEmpty())
+        {
+        throw queueTypeException("The Queue is Empty");
+    }
+    else {
+        Node<T>* nodeFront;
+        nodeFront = root;
+        T returnValue;
+        returnValue = nodeFront->info;
+        root = root->next;
+        delete nodeFront;
+        current-=1;
+        return returnValue;
     }
 }
 
-template <typename T, typename StackVector>
-int stackType<T, StackVector>::Size() const {
-  return (size);
-}
 
 using namespace std;
 
@@ -552,7 +563,7 @@ cout <<" " << memberAccount <<endl;
 
 int main()
 {
-    stackType <membershipType> memberlist(6);
+    queueType<membershipType> memberlist(6);
     ifstream file;
     file.open("infile.txt");
     string int1, int2;
@@ -568,26 +579,29 @@ int main()
         temp.setInterest2(int2);
         file>> dollar >> cent;
         temp.memberAccount= USDollarCents(dollar,cent);
-        memberlist.Push(temp);
+        memberlist.Enqueue(temp);
                 }
-   for(int i=0;i<memberlist.Size();i++){
-        memberlist.Top().print_member_type();
-        memberlist.Pop();
+        int me_size=0;
+        me_size=memberlist.Size();
+        for(int i=0;i<me_size;i++){
+        memberlist.Dequeue().print_member_type();
+
     }
     file.close();
     return 0;
 
 }
 /*
-Claire, Claude  6   2311   66   32nd    Street  Woodbridge,     VA      44040   F  cooking  facebook    1  1 $332.99
-Smith, Stanley  5   3456   56   D       Street  Baltimore,      MD      30229   M  movies  dining       2  1 $876.25
-Joan, Wilson    4   1234   12   Georgia Ave.  Washington,       DC      20019   F  romance  dining      2  3 $190.10
-Jerry, Francis  3   6666   2345 6th     Street  Woodbridge,     VA      44040   M  movies  roadtrips    1  1 $611.33
-Jackson, Stan   2   3748   12   Douglas Ave.  Baltimore,        MD      30229   M  sports  movies       2  4 $200.0
 Herold, Jill    1   2234   123  Main    St.  Washington,        DC      20019   F  yoga  facebook       1  2 $231.12
+Jackson, Stan   2   3748   12   Douglas Ave.  Baltimore,        MD      30229   M  sports  movies       2  4 $200.0
+Jerry, Francis  3   6666   2345 6th     Street  Woodbridge,     VA      44040   M  movies  roadtrips    1  1 $611.33
+Joan, Wilson    4   1234   12   Georgia Ave.  Washington,       DC      20019   F  romance  dining      2  3 $190.10
+Smith, Stanley  5   3456   56   D       Street  Baltimore,      MD      30229   M  movies  dining       2  1 $876.25
+Claire, Claude  6   2311   66   32nd    Street  Woodbridge,     VA      44040   F  cooking  facebook    1  1 $332.99
 
-Process returned 0 (0x0)   execution time : 0.044 s
+Process returned 0 (0x0)   execution time : 0.048 s
 Press any key to continue.
+
 
 
 */
